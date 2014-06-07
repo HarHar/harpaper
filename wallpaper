@@ -51,16 +51,22 @@ app = Flask(__name__)
 
 @app.route('/')
 def main():
-	return '<h1>Faggot</h1>'
+	return render_template('main.html')
+
+class ControlNamespace(BaseNamespace, RoomsMixin, BroadcastMixin):
+    def on_init(self):
+    	self.emit('sethtml_full', '<h1>UR A FAGET</h1>')
+
+@app.route('/socket.io/<path:remaining>')
+def socketio(remaining):
+    try:
+        socketio_manage(request.environ, {'/control': ControlNamespace}, request)
+    except:
+        app.logger.error("Exception while handling socketio connection",
+                         exc_info=True)
+    return Response()
 
 SocketIOServer(('', 9998), app, resource='socket.io').serve_forever()
-
-
-
-
-
-
-
 
 
 
