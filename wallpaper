@@ -1,0 +1,70 @@
+#!/usr/bin/env python2
+import sys
+
+if '--window' in sys.argv:
+	import time
+	from PyQt4.QtCore import *
+	from PyQt4.QtGui import *
+	from PyQt4.QtWebKit import *
+	import threading
+
+	time.sleep(2)
+	app = QApplication([])
+
+	web = QWebView()
+	web.load(QUrl("http://localhost:9998/"))
+
+	flags =  Qt.WindowFlags()
+	flags |= Qt.WindowStaysOnBottomHint
+
+	web.setWindowFlags(flags)
+	screenRect = app.desktop().screenGeometry()
+	web.resize(screenRect.width(), screenRect.height())
+
+	web.show()
+
+	sys.exit(app.exec_())
+
+import subprocess
+import atexit
+desktop = subprocess.Popen(['python3', __file__, '--window'])
+
+def killDesktop(desktop):
+	desktop.kill()
+atexit.register(killDesktop, desktop)
+#################
+
+from flask import Flask, request, session, g, redirect, url_for, abort, render_template, flash, make_response, send_from_directory, escape, Response
+import flask
+from werkzeug import secure_filename
+from socketio import socketio_manage
+from socketio.namespace import BaseNamespace
+from socketio.mixins import RoomsMixin, BroadcastMixin
+from werkzeug.exceptions import NotFound
+from gevent import Greenlet
+import gevent
+from gevent import monkey
+from socketio.server import SocketIOServer
+
+monkey.patch_all()
+app = Flask(__name__)
+
+@app.route('/')
+def main():
+	return '<h1>Faggot</h1>'
+
+SocketIOServer(('', 9998), app, resource='socket.io').serve_forever()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
