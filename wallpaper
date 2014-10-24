@@ -51,7 +51,7 @@ for i, arg in enumerate(sys.argv):
 
     --setLayer [on/off]      Enables or disables a thin transparent layer below the UI so it's better readable
 
-    --setLayerOpacity [0~1]  Sets the amount of transparency of the thin layer, 0 being invisible, 0.5 being 50% transparent and 1 being fully opaque
+    --setLayerOpacity [0~1]  Sets the amount of transparency of the thin layer; 0 being invisible, 0.5 being 50% transparent and 1 being fully opaque
 
     --setBlur [true/false]   Enables or disables applying a gaussian blur filter to the image
 
@@ -66,7 +66,7 @@ for i, arg in enumerate(sys.argv):
         toExit = True
     if arg.lower() in ['--version', 'version', '-v']:
         print("""harpaper, version """ + __version__ + """
-Copyright (c) 2014 HarHar Software Foundation, Inc.
+Copyright (c) 2014 #/g/technology Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 
 This is free software; you are free to change and redistribute it.
