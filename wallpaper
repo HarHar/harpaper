@@ -49,7 +49,7 @@ for i, arg in enumerate(sys.argv):
 
     --set [file path]        Sets the wallpaper image
 
-    --setLayer [on/off]      Enables or disables a thin transparent layer below the UI so it's better setEnabled
+    --setLayer [on/off]      Enables or disables a thin transparent layer below the UI so it's better readable
 
     --setLayerOpacity [0~1]  Sets the amount of transparency of the thin layer, 0 being invisible, 0.5 being 50% transparent and 1 being fully opaque
 
