@@ -1,0 +1,92 @@
+body {
+	background-color: #000;
+}
+
+@font-face {
+  font-family: 'Poiret One';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Poiret One'), local('PoiretOne-Regular'), url(/static/Poiret_One.woff) format('woff');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
+}
+
+#background {
+	width: 100%;
+	height: 100%;
+	position: fixed;
+	top: 0;
+	left: 0;
+}
+
+#mpdvis_container {
+	/*background-color: rgba(0, 0, 0, 0);*/
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 400px;
+	z-index: 9001;
+}
+
+{% if conf['layer'] != None %}
+#layer {
+	background-color: {{ conf['layer'] }};
+	opacity: {{ conf['layerOpacity'] }};
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 220px;
+	z-index: 9000;
+}
+{% endif %}
+
+#yeahbaby {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	left: 0;
+	top: 0;
+	background-color: #000;
+}
+
+#musicInfo_title {
+	font-size: 32px;
+	position: fixed;
+	left: 110px;
+	top: -4px;
+	z-index: 9000;
+	font-family: 'Poiret One', cursive;
+	font-weight: bold;
+	white-space: nowrap;
+	max-width: 420px;
+	/*overflow: hidden;*/
+}
+
+#musicInfo_artist {
+	font-size: 24px;
+	position: fixed;
+	left: 115px;
+	top: 24px;
+	width: auto;
+	z-index: 9000;
+	font-family: 'Poiret One', cursive;
+	font-weight: bold;
+	white-space: nowrap;
+	max-width: 420px;
+}
+
+.mpdvisBar {
+	position: fixed;
+	/*background-color: #C23939;
+	background-color: rgba(255, 255, 255, 0.01) !important;
+	border-right: thick solid #bbb;*/
+	left: 0px;
+	top: 0px;
+	height: 4px;
+	/*margin-top: 5px;*/
+	width: 4px;
+}
+
+.bar_red { background-color:  #da251c; }
+.bar_yellow { background-color:  #f9c301; }
+.bar_blue { background-color: #047cc0; }
+.bar_purple { background-color: #7e245a; }

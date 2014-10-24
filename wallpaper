@@ -1,36 +1,238 @@
 #!/usr/bin/env python2
+"""
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+__version__ = '0.0.1'
+
 import sys
+import os
+import json
 
-if '--window' in sys.argv:
-	import time
-	from PyQt4.QtCore import *
-	from PyQt4.QtGui import *
-	from PyQt4.QtWebKit import *
-	import threading
+configpath = os.path.join(os.path.split(__file__)[0], 'config.json')
+rawconfig = open(configpath, 'r').read().strip('\n')
+config = json.loads(rawconfig)
 
-	time.sleep(2)
-	app = QApplication([])
+toExit = False
 
-	web = QWebView()
-	web.load(QUrl("http://localhost:9998/"))
+if '--fork' in sys.argv:
+    if os.fork() != 0:
+        toExit = True
 
-	flags =  Qt.WindowFlags()
-	flags |= Qt.WindowStaysOnBottomHint
+if '--getcolor' in sys.argv:
+    import urllib2
+    print('Color: ' + urllib2.urlopen('http://localhost:9998/getcolor').read())
+    toExit = True
 
-	web.setWindowFlags(flags)
-	screenRect = app.desktop().screenGeometry()
-	web.resize(screenRect.width(), screenRect.height())
+skip = 0
+for i, arg in enumerate(sys.argv):
+    if skip > 0:
+        skip -= 1
+        continue
+    if arg.lower() in ['help', '--help', '-h']:
+        print(sys.argv[0] + """
+    harpaper(c)(r)(tm)
 
-	web.show()
+    (nothing)                Executes wallpaper
 
-	sys.exit(app.exec_())
+    --fork                   Executes wallpaper on background (WOW)
 
-import subprocess
-import atexit
-desktop = subprocess.Popen(['python3', __file__, '--window'])
+    --set [file path]        Sets the wallpaper image
+
+    --setLayer [on/off]      Enables or disables a thin transparent layer below the UI so it's better setEnabled
+
+    --setLayerOpacity [0~1]  Sets the amount of transparency of the thin layer, 0 being invisible, 0.5 being 50% transparent and 1 being fully opaque
+
+    --setBlur [true/false]   Enables or disables applying a gaussian blur filter to the image
+
+    --setAdaptedColor [#HEX] Sets the color to be replaced with a dynamic adaptative color on the background image
+
+    --help                   This
+
+    --version                Displays version number
+
+    The double dash (--) are optional on all switches, they're all case insensitive and all can be used at once
+    All switches below --fork must be ran while an instance of the wallpaper is running currently""")
+        toExit = True
+    if arg.lower() in ['--version', 'version', '-v']:
+        print("""harpaper, version """ + __version__ + """
+Copyright (c) 2014 HarHar Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+
+This is free software; you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+
+(not copied from bash --version)""")
+        toExit = True
+    if arg.lower() in ['set', '--set']:
+        import urllib2
+        if len(sys.argv) <= i:
+            print('Insufficient parameters')
+            exit()
+
+        if os.path.exists(sys.argv[i+1]):
+            config['backgroundfile'] = os.path.abspath(sys.argv[i+1])
+            f = open(configpath, 'w')
+            f.write(json.dumps(config))
+            f.close()
+            urllib2.urlopen('http://localhost:9998/refresh').read()
+        else:
+            print('404 Wallpaper not found')
+
+        toExit = True
+        skip = 1
+    elif arg.lower() in ['setlayer', '--setlayer']:
+        if len(sys.argv) <= i:
+            print('Insufficient parameters')
+            exit()
+        import urllib2
+        if sys.argv[i+1].lower() in ['off', 'none', 'no', 'false']:
+            sys.argv[i+1] = None
+        config['layer'] = sys.argv[i+1]
+        f = open(configpath, 'w')
+        f.write(json.dumps(config))
+        f.close()
+        urllib2.urlopen('http://localhost:9998/refresh').read()
+
+        toExit = True
+        skip = 1
+
+    elif arg.lower() in ['setblur', '--setblur']:
+        if len(sys.argv) <= i:
+            print('Insufficient parameters')
+            exit()
+        import urllib2
+        if sys.argv[i+1].lower() in ['off', 'none', 'no', 'false']:
+            sys.argv[i+1] = False
+        config['blur'] = sys.argv[i+1]
+        f = open(configpath, 'w')
+        f.write(json.dumps(config))
+        f.close()
+        urllib2.urlopen('http://localhost:9998/refresh').read()
+
+        toExit = True
+        skip = 1
+
+    elif arg.lower() == ['setcolor', '--setblur']:
+        if len(sys.argv) <= i:
+            print('Insufficient parameters')
+            exit()
+        import urllib2
+        config['uiColor'] = sys.argv[i+1]
+        f = open(configpath, 'w')
+        f.write(json.dumps(config))
+        f.close()
+        urllib2.urlopen('http://localhost:9998/refresh').read()
+
+        toExit = True
+        skip = 1
+
+    elif arg.lower() == ['setadaptedcolor', '--setadaptedcolor']:
+        if len(sys.argv) <= i:
+            print('Insufficient parameters')
+            exit()
+        import urllib2
+        config['adaptedColor'] = sys.argv[i+1]
+        f = open(configpath, 'w')
+        f.write(json.dumps(config))
+        f.close()
+        urllib2.urlopen('http://localhost:9998/refresh').read()
+
+        toExit = True
+        skip = 1
+
+    elif arg.lower() == ['setlayeropacity', '--setlayeropacity']:
+        if len(sys.argv) <= i:
+            print('Insufficient parameters')
+            exit()
+        import urllib2
+        config['layerOpacity'] = sys.argv[i+1]
+        f = open(configpath, 'w')
+        f.write(json.dumps(config))
+        f.close()
+        urllib2.urlopen('http://localhost:9998/refresh').read()
+        
+        toExit = True
+        skip = 1
+
+if toExit: exit()
+
+class greedyOutput():
+    def __init__(self, realfile):
+        self.realfile = realfile
+        self.quiet = False
+        if '--fork' in sys.argv:
+            self.quiet = True
+    def flush(self):
+        self.realfile.flush()
+    def read(self, *args):
+        return 'no'
+    def write(self, obj):
+        return 'no'
+    def plsread(self, *args):
+        if not self.quiet:
+            return self.realfile.read(*args)
+    def plswrite(self, obj):
+        if not self.quiet:
+            self.realfile.write(obj)
+            self.realfile.flush()
+
+sys.stdout = greedyOutput(sys.stdout)
+#sys.stderr = greedyOutput(sys.stderr)
+sys.__stdout__ = greedyOutput(sys.__stdout__)
+#sys.__stderr__ = greedyOutput(sys.__stderr__)
+
+def log(what):
+    sys.stdout.plswrite(what + '\n')
+    sys.stdout.flush()
+
+if ('--window' in sys.argv) or ('--client' in sys.argv):
+    import time
+    from PyQt4.QtCore import *
+    from PyQt4.QtGui import *
+    from PyQt4.QtWebKit import *
+
+    time.sleep(.1)
+    app = QApplication([])
+
+    web = QWebView()
+    web.load(QUrl("http://localhost:9998/"))
+
+    flags = Qt.WindowFlags()
+    flags |= Qt.FramelessWindowHint
+    flags |= Qt.WindowStaysOnBottomHint
+    flags |= Qt.X11BypassWindowManagerHint
+    web.setWindowFlags(flags)
+
+    screenRect = app.desktop().screenGeometry()
+    web.resize(screenRect.width(), screenRect.height())
+    
+    log('[info] window ready, showing...')
+    web.show()
+    web.lower()
+    web.setEnabled(False)
+    sys.exit(app.exec_())
+
+if ('--server' in sys.argv) == False:
+    import subprocess
+    import atexit
+    desktop = subprocess.Popen(['python3', __file__, '--window'])
+
+if '--client' in sys.argv:
+    exit()
 
 def killDesktop(desktop):
-	desktop.kill()
+    desktop.kill()
 atexit.register(killDesktop, desktop)
 #################
 
@@ -45,32 +247,377 @@ from gevent import Greenlet
 import gevent
 from gevent import monkey
 from socketio.server import SocketIOServer
+import os
+import json
+import subprocess
+from gevent import select
+import time
+import mpd
+import PIL
+from PIL import Image, ImageMath, ImageFilter
+import struct
+import random
+
+os.chdir('/'.join(__file__.split('/')[:-1]))
 
 monkey.patch_all()
 app = Flask(__name__)
+app.debug = True
+
+globalInfo = {} #namespace
+globals()['globalInfo'] = globalInfo
+
+globalInfo['config'] = config
+globalInfo['sockets'] = []
+#modulespath = os.path.join(os.path.split(__file__)[0], 'modules')
+
+class DummyData(Exception):
+    pass
+
+def baseN(num,b,numerals="0123456789abcdefghijklmnopqrstuvwxyz"):
+    return ((num == 0) and numerals[0]) or (baseN(num // b, b, numerals).lstrip(numerals[0]) + numerals[num % b])
+
+
+def difference1(source, color):
+    """When source is bigger than color"""
+    return (source - color) / (255.0 - color)
+
+def difference2(source, color):
+    """When color is bigger than source"""
+    return (color - source) / color
+
+def color_to_alpha(image, color=None):
+    image = image.convert('RGBA')
+    width, height = image.size
+
+    color = map(float, color)
+    img_bands = [band.convert("F") for band in image.split()]
+
+    # Find the maximum difference rate between source and color. I had to use two
+    # difference functions because ImageMath.eval only evaluates the expression
+    # once.
+    alpha = ImageMath.eval(
+        """float(
+            max(
+                max(
+                    max(
+                        difference1(red_band, cred_band),
+                        difference1(green_band, cgreen_band)
+                    ),
+                    difference1(blue_band, cblue_band)
+                ),
+                max(
+                    max(
+                        difference2(red_band, cred_band),
+                        difference2(green_band, cgreen_band)
+                    ),
+                    difference2(blue_band, cblue_band)
+                )
+            )
+        )""",
+        difference1=difference1,
+        difference2=difference2,
+        red_band = img_bands[0],
+        green_band = img_bands[1],
+        blue_band = img_bands[2],
+        cred_band = color[0],
+        cgreen_band = color[1],
+        cblue_band = color[2]
+    )
+
+    # Calculate the new image colors after the removal of the selected color
+    new_bands = [
+        ImageMath.eval(
+            "convert((image - color) / alpha + color, 'L')",
+            image = img_bands[i],
+            color = color[i],
+            alpha = alpha
+        )
+        for i in xrange(3)
+    ]
+
+    # Add the new alpha band
+    new_bands.append(ImageMath.eval(
+        "convert(alpha_band * alpha, 'L')",
+        alpha = alpha,
+        alpha_band = img_bands[3]
+    ))
+
+    return Image.merge('RGBA', new_bands)    
+
+def distance2(a, b):
+    return (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2])
+
+def makeColorTransparent(image, color, thresh2=0):
+    image = image.convert("RGBA")
+    red, green, blue, alpha = image.split()
+    image.putalpha(ImageMath.eval("""convert(((((t - d(c, (r, g, b))) >> 31) + 1) ^ 1) * a, 'L')""",
+        t=thresh2, d=distance2, c=color, r=red, g=green, b=blue, a=alpha))
+    return image
+
+
+def mpdvisReadThread(globalInfo):
+    if not (globalInfo['config']['uiColor'] == 'auto'):
+        return
+    skipper = 0
+    x = 0
+    proc = globalInfo['mpdvisProc']
+    c1max = 0
+    sum_new = 0
+    oldchannels = []
+    mute = False
+    while proc.poll() is None:
+        select.select([proc.stdout], [], [])
+        read = proc.stdout.readline()
+        skipper += 1
+        if skipper < 2:
+            continue
+        skipper = 0
+        try:
+            globalInfo['mpdvis_lastUpdate'] = time.time()
+
+            valid = False
+            channels = read[:-1].split(' ')[2:]
+            channels2 = [int(z) for z in channels]
+            if not (globalInfo['config']['adaptedColor'] == 'none'):
+                #for channel in channels:
+                #    channels2.append(channel.split('.')[0])
+                #for channel in channels2:
+                #    if channel.isdigit() == False:
+                #        raise DummyData
+
+                #if len(oldchannels) == 0:
+                #    oldchannels = channels2
+                #else:
+                #    for i, channel in enumerate(channels2):
+                #        if (abs(float(channel) - float(oldchannels[i])) <= 1) and (int(channel) != 0):
+                #            channels2[i] = oldchannels[i]
+
+                oldchannels = channels2
+
+                #if sum([float(f) for f in channels2]) > 2:
+                #if channels2[1] != '0':
+                c1, c2, c3 = 0, 0, 0
+                #for channel in channels2[16:26]:
+                #    c1 += int(channel)
+                c1 = sum(channels2[16:26])/6
+                #c1 = (c1/6);
+                #for channel in channels2[8:16]:
+                #    c2 += int(channel)
+                #c2 = int((c2/6) * 1);
+                c2 = sum(channels2[8:16])/6
+                #for channel in channels2[:8]:
+                #    c3 += int(channel)
+                #c3 = int((c3/6) * 1);
+                c3 = sum(channels2[:8])/6
+                sum_old = sum_new
+                sum_new = c1+c2+c3
+                if abs(sum_new - sum_old) > 2:
+                    valid = True
+                #if c1 > c2 and c1 > c3:
+                #    c1 += 10
+                #    #c2 -= 10
+                #    #c3 -= 10
+                #elif c2 > c1 and c2 > c3:
+                #    c2 += 15
+                #    #c1 -= 10
+                #    #c3 -= 10
+                #elif c3 > c1 and c3 > c2:
+                #    c3 += 20
+                #    #c1 -= 10
+                #    #c2 -= 10
+
+                c1 = 255 if c1 > 255 else c1
+                c2 = 255 if c2 > 255 else c2
+                c3 = 255 if c3 > 255 else c3
+                #if c1 > 255: c1 = 255
+                #if c2 > 255: c2 = 255
+                #if c3 > 255: c3 = 255
+
+                h1 = hex(c1*4)[2:]
+                h2 = hex(c2*4)[2:]
+                h3 = hex(c3*4)[2:]
+                if len(h1) == 1: h1 = str(c1*2).zfill(2)
+                if len(h2) == 1: h2 = str(c2*2).zfill(2)
+                if len(h3) == 1: h3 = str(c3*2).zfill(2)
+
+                result = '#' + h1 + h2 + h3
+            for socket in globalInfo['sockets']:
+                socket.emit('mpdvisInfo', channels2)
+                if valid:
+                    socket.emit('chcolor', result)
+            x += 1
+        except DummyData:
+            pass
+
+def mpdvisStatusThread(globalInfo):
+    while True:
+        time.sleep(.2)
+        if time.time() - globalInfo.get('mpdvis_lastUpdate', 0) >= 0.8:
+            for socket in globalInfo['sockets']:
+                socket.emit('mpdvisClear')
+
+mpdvispath = os.path.join(os.path.split(__file__)[0], 'mpdvis.py')
+globalInfo['mpdvisProc'] = subprocess.Popen([mpdvispath], stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+globalInfo['mpdvisThread'] = Greenlet(mpdvisReadThread, globalInfo)
+globalInfo['mpdvisThread'].start()
+globalInfo['mpdvisStatusThread'] = Greenlet(mpdvisStatusThread, globalInfo)
+globalInfo['mpdvisStatusThread'].start()
+
+globalInfo['mpdClient'] = mpd.MPDClient()
+globalInfo['mpdEnabled'] = True
+try:
+    globalInfo['mpdClient'].connect('localhost', 6600)
+except:
+    globalInfo['mpdEnabled'] = False
+
+globalInfo['wpColor'] = '#000'
+
+def songInfo(client, globalInfo):
+    if not globalInfo['mpdEnabled']:
+        return ['', '']
+    d = client.status()
+
+    if d['state'] != 'play':
+        return ['', '']
+
+    try:
+        st = client.playlistid(d['songid'])
+        try:
+            ret = [st[0]['artist'], st[0]['title']] #+ sep + chr(2) + ' Length: ' + chr(15) + str(datetime.timedelta(seconds=int(st[0]['time'])))
+        except:
+            try:
+                ret = ['', os.path.basename(st[0]['file'])] #+ sep + chr(2) + 'Length: ' + chr(15) + st[0]['time'] + ' seconds'
+            except:
+                ret = ['', '']
+    except:
+        ret = ['', '']
+    if len(ret[0]) > 30:
+        try:
+            ret[0] = ret[0][:27] + u'...'
+        except:
+            ret[0] = ret[0]
+    if len(ret[1]) > 30:
+        try:
+            ret[1] = ret[1][:27] + u'...'
+        except:
+            ret[1] = ret[1]
+    #try:
+    #    ret[0] = ret[0].encode('utf8')
+    #    ret[1] = ret[1].encode('utf8')
+    #except:
+    #    ret[0] = 'sorry...'
+    #    ret[1] = 'Unable to read moonrunes'
+    return ret
+
+globalInfo['musicInfo_artist'], globalInfo['musicInfo_title'] = songInfo(globalInfo['mpdClient'], globalInfo)
+
+def mpdIdle(client, globalInfo):
+    while globalInfo['mpdEnabled']:
+        client.send_idle()
+        select.select([client], [], [])
+        changed = client.fetch_idle()
+        globalInfo['musicInfo_artist'], globalInfo['musicInfo_title'] = songInfo(client, globalInfo)
+        for sclient in globalInfo['sockets']:
+            sclient.emit('musicInfo_artist', globalInfo['musicInfo_artist'])
+            sclient.emit('musicInfo_title', globalInfo['musicInfo_title'])
+globalInfo['mpdThreadFunc'] = mpdIdle
+globalInfo['mpdThread'] = Greenlet(globalInfo['mpdThreadFunc'], globalInfo['mpdClient'], globalInfo)
+globalInfo['mpdThread'].start()
 
 @app.route('/')
 def main():
-	return render_template('main.html')
+    return render_template('main.html')
 
-class ControlNamespace(BaseNamespace, RoomsMixin, BroadcastMixin):
+@app.route('/refresh')
+def refresh():
+    rawconfig = open(configpath, 'r').read().strip('\n')
+    config = json.loads(rawconfig)
+    globalInfo['config'] = config
+    for socket in globalInfo['sockets']:
+        socket.emit('refreshWP')
+    return ''
+
+@app.route('/wallpaper')
+def wallpaper():
+    #return open(globalInfo['config']['backgroundfile']).read()
+    filepath = os.path.realpath(globalInfo['config']['backgroundfile'])
+
+    if globalInfo['config']['adaptedColor'] != 'none':
+        color = globalInfo['config']['adaptedColor']
+
+        a = """bgcolor = struct.unpack('BBBB', (color + 'FF').replace('#', '').decode('hex'))
+
+        original = Image.open(filepath)
+        image = color_to_alpha(original, bgcolor)
+        background = Image.new('RGBA', image.size, (255, 255, 255, 0))
+        background.paste(image.convert('RGBA'), mask=image)
+
+        out = '/tmp/temp_' + str(random.randint(1, 1000)) + '.png'
+        background.save(out)"""
+
+        color = color.replace('#', '')
+        cvalues = []
+        cvalues.append(int(color[0:2], 16))
+        cvalues.append(int(color[2:4], 16))
+        cvalues.append(int(color[4:6], 16))
+        cvalues = (cvalues[0], cvalues[1], cvalues[2], 255)
+
+        a = """img = Image.open(filepath)
+        img = img.convert("RGBA")
+
+        pixdata = img.load()
+
+        for y in xrange(img.size[1]):
+            for x in xrange(img.size[0]):
+                #sys.stderr.write(repr(pixdata[x, y]) + ' == ' + repr(cvalues) + '\n')
+                #sys.stderr.flush()
+                if pixdata[x, y] == cvalues:
+                    pixdata[x, y] = (255, 255, 255, 0)
+
+        img.save('/tmp/temp.png', 'PNG')"""
+
+        im = makeColorTransparent(Image.open(filepath), cvalues, 5000)#.filter(ImageFilter.GaussianBlur(radius=2)).save('/tmp/temp.png')
+        if globalInfo['config']['blur']:
+            im = im.filter(ImageFilter.GaussianBlur(radius=2))
+        im.save('/tmp/temp.png')
+        return send_from_directory(directory='/tmp/', filename='temp.png')
+    else:
+        return send_from_directory(os.path.dirname(filepath), os.path.basename(filepath))
+
+@app.route('/main.css')
+def css():
+    return Response(render_template('main.css', conf=globalInfo['config']), mimetype='text/css')
+
+@app.route('/getcolor')
+def cmd_getcolor():
+    return globalInfo['wpColor']
+
+class ControlSocket(BaseNamespace, RoomsMixin, BroadcastMixin):
     def on_init(self):
-    	self.emit('sethtml_full', '<h1>UR A FAGET</h1>')
+        globalInfo['sockets'].append(self)
+        self.emit('musicInfo_artist', globalInfo['musicInfo_artist'])
+        self.emit('musicInfo_title', globalInfo['musicInfo_title'])
+
+        if globalInfo['config']['uiColor'] != 'auto':
+            self.emit('setUiColor', globalInfo['config']['uiColor'])
+    def on_setColor(self, color):
+        globalInfo['wpColor'] = color
 
 @app.route('/socket.io/<path:remaining>')
 def socketio(remaining):
     try:
-        socketio_manage(request.environ, {'/control': ControlNamespace}, request)
+        socketio_manage(request.environ, {'/control': ControlSocket}, request)
     except:
         app.logger.error("Exception while handling socketio connection",
                          exc_info=True)
     return Response()
 
+log('[info] server ready, starting to listen...')
+
+#from gevent.pywsgi import WSGIServer
+#from geventwebsocket.handler import WebSocketHandler
+#server = WSGIServer(('0.0.0.0', 9998), app, handler_class=WebSocketHandler)
+#server.serve_forever()
+
 SocketIOServer(('', 9998), app, resource='socket.io').serve_forever()
-
-
-
-
-
-
-
